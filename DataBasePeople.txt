@@ -1,0 +1,708 @@
+program OMyGod;
+
+{$mode objfpc} //ООП
+
+uses SySUtils;
+
+//Класс TCustomPerson
+type
+	TCustomPerson = class //Класс с data
+	type
+		TmpTCustomPerson = array of TCustomPerson;//Шаблон для массива
+	private
+		LastName:string;
+		FirstName:string;
+		MiddleName:string;
+		Gender:string[2];
+		BirthDate:string;
+		ID:integer;
+		Child:TmpTCustomPerson;
+		
+	public
+		function FLastName:string; //продумать защиту чтобы можно было получитьне оригинал
+		procedure SetFLastName(ChangeName:string);
+		function FFirstName:string;
+		procedure SetFFirstName(ChangeName:string);
+		function FMiddleName:string;
+		procedure SetMiddleName(ChangeName:string);
+		function FGender:string;
+		procedure SetFGender(ChangeName:string);
+		function FBirthDate:string;
+		procedure SetFBirthDate(ChangeName:string);
+		function FID:integer;
+		procedure SetFID(ChangeID:integer);//не уверен что это нужно для идентификатора
+		
+		function MassivChild:TmpTCustomPerson;//Получаем
+		
+		function FindIndexChild(Index:integer):TCustomPerson;
+		function FindIdChild(IDChild:integer):TCustomPerson;
+		procedure AddChild(AdChild:TCustomPerson);
+		procedure FullChildSee();
+	end;
+	
+function TCustomPerson.FLastName:string;
+begin
+	Result:= LastName;
+end;
+procedure TCustomPerson.SetFLastName(ChangeName:string);
+begin
+	LastName:= ChangeName;
+end;
+function TCustomPerson.FFirstName:string;
+begin
+	Result:= FirstName;
+end;
+procedure TCustomPerson.SetFFirstName(ChangeName:string);
+begin
+	FirstName:= ChangeName;
+end;
+function TCustomPerson.FMiddleName:string;
+begin
+	Result:= MiddleName;
+end;
+procedure TCustomPerson.SetMiddleName(ChangeName:string);
+begin
+	MiddleName:= ChangeName;
+end;
+function TCustomPerson.FGender:string;
+begin
+	Result:=Gender;
+end;
+procedure TCustomPerson.SetFGender(ChangeName:string);
+begin
+	Gender:=ChangeName;
+end;
+function TCustomPerson.FBirthDate:string;
+begin
+	Result:=BirthDate;
+end;
+procedure TCustomPerson.SetFBirthDate(ChangeName:string);
+begin
+	BirthDate:=ChangeName;
+end;
+function TCustomPerson.FID:integer;
+begin
+	Result:=ID;
+end;
+procedure TCustomPerson.SetFID(ChangeID:integer);
+begin
+	ID:=ChangeID;
+end;
+
+function TCustomPerson.MassivChild:TmpTCustomPerson;
+begin 
+	Result:=Child;
+end;
+
+function TCustomPerson.FindIndexChild(Index:integer):TCustomPerson;
+
+begin
+	Writeln(High(Child));
+	if Index > High(Child) then //проверка на массив детей
+	begin
+		Writeln('Netu stoko detei');
+		Result := nil;
+		Exit;
+	end;
+	
+	if Child[Index] <> nil then
+	begin
+		Writeln(Child[Index].FLastName);
+		Result:= Child[Index];
+	end;
+	
+	Result:= nil; //Result возращает оригинал(ссылку), а не копию
+end;
+
+function TCustomPerson.FindIdChild(IDChild:integer):TCustomPerson;
+var i:integer;
+begin
+	i:= 0;
+	for i:=0 to High(Child) do
+	begin
+		if Child[i].ID = IDChild then
+		begin
+			Writeln(Child[i].FLastName);
+			Result:= Child[i];
+			break;
+		end;
+		Result:= nil;
+	end;
+
+end;
+
+procedure TCustomPerson.AddChild(AdChild:TCustomPerson);
+	
+begin
+	SetLength(Child, Length(Child)+1);
+	Child[High(Child)]:= AdChild;
+	
+end;
+
+procedure TCustomPerson.FullChildSee();//Для тестов
+var
+	i:integer;
+begin
+	i:=0;
+	for i:=0 to High(Child) do 
+	begin		
+		Writeln(Child[i].ID);
+		Writeln(Child[i].FLastName);
+		Writeln(Child[i].FFirstName);
+		Writeln(Child[i].MiddleName);//FMiddleName?
+		Writeln(Child[i].Gender);//FGender
+		Writeln(Child[i].BirthDate);//
+		
+	end;
+end;
+
+//Класс TPerson(TCustomPerson)
+type
+	TPerson = class(TCustomPerson) //текущий обьект разделение задач
+	public
+		TempChildsID:array of integer; //У каждого персоны будет свои массив детей если есть для связывания
+		procedure ReadTxtData(var F:TextFile);
+		procedure WriteTxtData(var F:TextFile);
+		function ReadFromConsole(TmpGetC:integer):Boolean;
+		procedure WriteToConsole;
+		
+	end;
+	
+procedure TPerson.ReadTxtData(var F:TextFile);
+var TmpStr:string;
+	N:integer;
+	
+	//TmpTCustomPerson:TCustomPerson;
+ begin
+		TmpStr:='';
+		N:= 0;
+		
+		Readln(F,TmpStr);//фамилия
+		SetFLastName(TmpStr);
+		Writeln(TmpStr);
+		
+		Readln(F, TmpStr);//имя
+		SetFFirstName(TmpStr);
+		Writeln(TmpStr);
+	
+		Readln(F, TmpStr);//отчество
+		SetMiddleName(TmpStr);
+		Writeln(TmpStr);
+	
+		Readln(F, TmpStr);//пол
+		SetFGender(TmpStr);
+		Writeln(TmpStr);
+	
+		Readln(F, TmpStr);//дата 
+		SetFBirthDate(TmpStr);
+		Writeln(TmpStr);
+		
+		Readln(F, TmpStr);//ID
+		SetFID(StrToInt(TmpStr));
+		Writeln(TmpStr);
+		
+		Readln(F, TmpStr);//Child(s) человека
+		while TryStrToInt(TmpStr,N) do
+		begin
+			Writeln(TmpStr);
+			SetLength(TempChildsID,Length(TempChildsID)+1);
+			TempChildsID[High(TempChildsID)] := N;
+			//AddChild();
+			Readln(F, TmpStr);
+		end;
+			
+		Writeln('');
+	
+	//Readln(F, TmpStr);//ID child
+		//if (TryStrToInt(TmpStr,N)) then
+		//Begin
+			//Writeln(N);
+			//Readln(F, TmpStr);
+		//AddChild();
+		//end
+		//else
+		//begin
+			
+		//end;
+	//Readln;
+	//Readln();
+	//SetFID()?
+	//Close(F);
+ end;
+
+	
+	procedure TPerson.WriteTxtData(var F:TextFile);
+	var i:integer;
+	begin
+		i:=0;
+		//Assign(F,'D:\Pascal(DB)\people.txt');
+		//Rewrite(F); //Открыть для записи (создаёт/очищает)
+		
+		Writeln(F, FLastName); //Запись в файл
+		Writeln(F, FFirstName);
+		Writeln(F, FMiddleName);
+		Writeln(F, FGender);
+		Writeln(F, FBirthDate);
+		Writeln(F, FID);
+		//Writeln(F, '---детки---');
+		for i:=0 to High(MassivChild) do
+		begin		
+			Writeln(F,MassivChild[i].FID);
+			Writeln(F,MassivChild[i].FLastName);
+			Writeln(F,MassivChild[i].FFirstName);
+			Writeln(F,MassivChild[i].MiddleName);
+			Writeln(F,MassivChild[i].FGender);
+			Writeln(F,MassivChild[i].FBirthDate);
+		end;
+		//Writeln(F,'------');
+		//CloseFile(F);
+	end;
+	
+	function TPerson.ReadFromConsole(TmpGetC:integer):Boolean;
+	var TmpStr:string;
+		NeverCh:integer;
+		TmpId:integer;
+	begin
+
+		NeverCh:=1;
+		TmpStr:='';
+		Readln(TmpStr);
+		if TmpStr = '' then
+		begin
+			//Writeln('Ввод окончен, так точно!');
+			//Result:=false;
+			Exit(false);
+		end;
+		SetFLastName(TmpStr);
+		Readln(TmpStr);
+		SetFFirstName(TmpStr);
+		Readln(TmpStr);
+		SetMiddleName(TmpStr);
+		Readln(TmpStr);
+		SetFGender(TmpStr);
+		Readln(TmpStr);
+		SetFBirthDate(TmpStr);
+		TmpId:=NeverCh+TmpGetC;
+		//Writeln(TmpId);
+		SetFID(TmpId);
+		
+
+		Result:=true;
+	end;
+	
+	procedure TPerson.WriteToConsole; //Детей как добавлять подумать
+		
+	begin
+	
+		Writeln(FID);
+		Writeln(FLastName);
+		Writeln(FFirstName);
+		Writeln(MiddleName);
+		Writeln(FGender);
+		Writeln(FBirthDate);
+		
+	end;
+	
+//Класс TCustomPersonDB
+type 
+	TPersonArray = array of TPerson; //Шаблон для массива
+	
+	TCustomPersonDB = class
+	private
+		DBPerson: array of TPerson;
+	public
+		function ReadDBPersons:TPersonArray;
+		function GetCount:integer;
+		function GetCountLength:integer;
+		
+		procedure AddDBPerson(TmpPerson:TPerson);
+		procedure DeleteDBPerson;
+		procedure MainDeleteDBPerson(IndexDB:integer);
+		function GetIdDBPerson(IDTperson:integer):integer;
+		function GetIndexObjDBPerson(P:TPerson):integer;
+		function GetObjTPerson(ix:integer):TPerson;
+		
+	end;
+	
+	function TCustomPersonDB.ReadDBPersons:TPersonArray;//Нельзя передавать в функцию неопределённый массив array of TPerson;
+	begin
+		
+		Result:= DBPerson;
+	end;
+	
+	function TCustomPersonDB.GetCount:integer;
+	
+	begin
+		Result:= High(DBPerson);
+	end;
+	
+	function TCustomPersonDB.GetCountLength:integer;
+	
+	begin
+		Result:= Length(DBPerson);
+	end;
+	
+	procedure TCustomPersonDB.AddDBPerson(TmpPerson:TPerson);
+	
+	begin
+		SetLength(DBPerson,Length(DBPerson)+1);
+		DBPerson[High(DBPerson)] := TmpPerson;
+		//Writeln(DBPerson[High(DBPerson)].FLastName());
+	end;
+	
+	procedure TCustomPersonDB.DeleteDBPerson;//это не основное удаление!(оно используется один раз в InputStandart)
+	
+	begin
+		DBPerson[High(DBPerson)].Free;
+		SetLength(DBPerson,Length(DBPerson)-1);
+	end;
+	
+	procedure TCustomPersonDB.MainDeleteDBPerson(IndexDB:integer);
+	var i:integer;
+	begin
+		DBPerson[IndexDB].Free;
+		for i:=IndexDB to High(DBPerson) do
+		begin
+			//Writeln(DBPerson[i].FLastName);
+			if i+1 > High(DBPerson) then
+				break;
+			
+			DBPerson[i]:= DBPerson[i+1];
+		end;
+		SetLength(DBPerson, Length(DBPerson)-1);
+	end;
+	
+	function TCustomPersonDB.GetIdDBPerson(IDTperson:integer):integer;
+	var i:integer;
+	begin
+		i:=0;
+		for i:=0 to High(DBPerson) do
+		begin
+			if DBPerson[i].ID = IDTperson then
+			begin
+				Result:=i;
+				break;
+			end;
+			Result:=-1;//-1 значит нету такого
+		end;
+	end;
+	
+	function TCustomPersonDB.GetIndexObjDBPerson(P:TPerson):integer;
+	var i:integer;
+	begin
+		i:=0;
+		for i:= 0 to High(DBPerson) do
+		begin
+			if DBPerson[i] = P then
+			begin
+				Result:= i;
+				//Writeln(DBPerson[i].FLastName);
+				Exit;//	Выход из функции
+			end;
+		end;
+	end;
+	
+	function TCustomPersonDB.GetObjTPerson(ix:integer):TPerson;
+	begin
+		if ix < 0 then
+			Exit(nil);
+			
+		if High(DBPerson) >= ix then
+		begin
+			Result:= DBPerson[ix];
+		end;
+	
+	end;
+
+//класс TPersonDB(TCustomPersonDB)
+type
+	TPersonDB = class(TCustomPersonDB)
+	
+	public
+		procedure WriteDBPerson(var F:TextFile);
+		procedure ReadDBPerson(var F:TextFile);
+		procedure InputStandart();
+		procedure OutStandart();
+		
+	end;
+	
+	procedure TPersonDB.WriteDBPerson(var F:TextFile);
+	var Tmp:TPerson;
+		i:integer;
+	begin
+		i:=0;
+		
+		for i:= 0 to GetCount do
+		begin
+			Tmp:=GetObjTPerson(i);
+			Tmp.WriteTxtData(F);
+		end;
+		CloseFile(F);
+	end;
+	
+	procedure TPersonDB.ReadDBPerson(var F:TextFile);
+	var TP:TPerson;
+		i,j,x:integer;
+		TmpTp:TPerson;
+		TmpTpTwo:Tperson;
+	begin
+	i:=0;
+	j:=0;
+	x:=0;
+		Reset(F);
+		while not EOF(F) do
+		begin
+			TP := TPerson.Create;
+			TP.ReadTxtData(F);
+			AddDBPerson(TP); //выделяет память и передаёт класс
+			
+		end;
+		CloseFile(F);
+		
+		for i:=0 to GetCount do
+		begin
+			TmpTp := GetObjTPerson(i);
+			for j:= 0 to High(TmpTp.TempChildsID) do
+			begin
+				for x:= 0 to GetCount do
+				begin
+					TmpTpTwo:= GetObjTPerson(x);
+					
+					if TmpTpTwo.FID = TmpTp.TempChildsID[j] then
+					begin
+						TmpTp.AddChild(TmpTpTwo);
+						break;
+					end;
+				end;
+			end;
+		end;
+		//AddChild();
+	end;
+	
+	procedure TPersonDB.InputStandart;
+		var Tmp:TPerson;
+			TmpBol:Boolean;
+			
+	begin
+		TmpBol:= false;
+		repeat
+			Tmp:=TPerson.Create;
+
+			//Writeln(GetCountLength);
+			TmpBol := Tmp.ReadFromConsole(GetCountLength);
+			//TmpBol := Tmp.ReadFromConsole(0);
+			
+			AddDBPerson(Tmp);
+			Writeln(TmpBol);
+		until TmpBol = False;//цикл робит до тех пор пока не равен fale
+		//Writeln(GetCount);
+		DeleteDBPerson; //надо удалять так как unil repeat создаёт один лишний
+		//Writeln(GetCount);
+	end;
+	
+	procedure TPersonDB.OutStandart;
+		var Tmp:TPerson;
+		i:integer;
+	begin
+		i:= 0;
+		for i:=0 to GetCount do
+		begin
+			Tmp:= GetObjTPerson(i);
+			Tmp.WriteToConsole;
+			
+		end;
+	end;
+//класс TPersonDBWorker
+type
+	TPersonDBWorker = class
+	private 
+		DB:TPersonDB;
+	public
+		constructor Create(NewDB: TPersonDB);
+		procedure FindFemale(Date:string);
+		procedure FindParents(IDchild:Integer);
+		procedure FindGrandFathers;
+		procedure FindSirota;
+	end;
+	
+	constructor TPersonDBWorker.Create(NewDB: TPersonDB);
+	begin
+		DB:= NewDB;
+	end;
+	
+	procedure TPersonDBWorker.FindFemale(Date:string);
+	var i:integer;
+		TmpP:TPerson;
+		s:string[2];
+	begin
+		i:=0;
+		s:= 'Ж';
+		for i:=0 to DB.GetCount do //DB.GetCount индекс с 0
+		begin
+			TmpP := DB.GetObjTPerson(i);
+			if (TmpP.FGender = s) and (TmpP.FBirthDate = Date) then 
+			begin
+				Writeln(TmpP.FBirthDate);
+				Writeln(TmpP.FID);
+				Writeln(TmpP.FLastName);
+				Writeln(TmpP.FFirstName);
+				Writeln(TmpP.FMiddleName);
+				Writeln(TmpP.FGender);
+			end;
+		end;
+	end;
+	
+	procedure TPersonDBWorker.FindParents(IDchild:Integer);
+	var i:integer;
+		j:integer;
+		x:integer;
+	begin
+		i:=0;
+		j:=0;
+		x:=0;
+		for i:=0 to DB.GetCount do
+		begin
+			if DB.GetObjTPerson(i).FID = IDchild then
+			begin
+				Writeln(DB.GetObjTPerson(i).FID);//DB.GetObjTPerson(i)-это сам класс детища
+				for j:= 0 to DB.GetCount do
+				begin
+					for x:= 0 to High(DB.GetObjTPerson(j).MassivChild) do 
+					begin
+						if DB.GetObjTPerson(i) = DB.GetObjTPerson(j).MassivChild[x] then
+						begin
+							Writeln(DB.GetObjTPerson(j).FLastName);
+							Writeln(DB.GetObjTPerson(j).FFirstName);
+							Writeln(DB.GetObjTPerson(j).FMiddleName);
+							Writeln(DB.GetObjTPerson(j).FGender);
+							Writeln(DB.GetObjTPerson(j).FID);
+							Writeln(DB.GetObjTPerson(j).FBirthDate);
+						end;
+					end;
+				end;
+			end;
+		end;
+		
+	end;
+	
+	procedure TPersonDBWorker.FindGrandFathers;
+		var i,j,y:integer;
+		s2:string[2];
+	begin
+		s2:='М';
+		for i:=0 to DB.GetCount do
+		begin
+			if DB.GetObjTPerson(i).FGender = s2 then
+			begin
+				for j:=0 to High(DB.GetObjTPerson(i).MassivChild) do
+				begin
+					for y:=0 to High(DB.GetObjTPerson(i).MassivChild[j].MassivChild) do //
+					begin
+						Writeln(DB.GetObjTPerson(i).FLastName);
+						Writeln(DB.GetObjTPerson(i).FFirstName);
+						Writeln(DB.GetObjTPerson(i).FMiddleName);
+						Writeln(DB.GetObjTPerson(i).FGender);
+						Writeln(DB.GetObjTPerson(i).FBirthDate);
+						Writeln(DB.GetObjTPerson(i).FID);
+						break;
+						//if DB.GetObjTPerson(i).MassivChild[j].MassivChild[y]
+					end;
+					break;
+				end;
+			end;
+		end;
+	end;
+	
+	procedure TPersonDBWorker.FindSirota;
+		var TmpMassive:array of TCustomPerson; //Массив детей если класс в массиве детей значит не сирота
+		i,j,y,r:integer;//TPerson? 
+		CountL:integer;
+		IndexTmp:integer;
+		Sirot:Boolean;
+	begin
+		CountL:=0;
+		IndexTmp:=0;
+		for i:=0 to DB.GetCount do
+		begin
+			for j:=0 to High(DB.GetObjTPerson(i).MassivChild) do
+			begin
+				SetLength(TmpMassive,1+CountL);
+				TmpMassive[IndexTmp]:=DB.GetObjTPerson(i).MassivChild[j];
+				Inc(IndexTmp);
+				Inc(CountL);
+			end;
+		end;
+		
+		for y:=0 to DB.GetCount do
+		begin
+			Sirot:=true;
+			for r:=0 to High(TmpMassive) do
+			begin
+				if DB.GetObjTPerson(y) = TmpMassive[r] then
+				begin
+					//Writeln(DB.GetObjTPerson(y).FLastName);
+					//Writeln(DB.GetObjTPerson(y).FID);
+					//Writeln('ne Sirota');
+					Sirot:=false;
+					break;
+				end;
+			end;
+			if Sirot = true then
+			begin
+				Writeln(DB.GetObjTPerson(y).FLastName);
+				Writeln(DB.GetObjTPerson(y).FFirstName);
+				Writeln(DB.GetObjTPerson(y).FMiddleName);
+				Writeln(DB.GetObjTPerson(y).FGender);
+				Writeln(DB.GetObjTPerson(y).FBirthDate);
+				Writeln(DB.GetObjTPerson(y).FID);
+			end;
+		end;
+	end;
+//Основа
+var	
+	
+	SQL:TPersonDB;
+	MySQL:TPersonDBWorker;
+	F:TextFile;
+	//ff:TPersonArray;
+BEGIN
+	SQL:=TPersonDB.Create;
+	Assign(F,'D:\Pascal(DB)\DataTest2.txt');
+	SQL.ReadDBPerson(F);
+	
+	//SQL.OutStandart;
+	MySQL:=TPersonDBWorker.Create(SQL);
+	writeln('FindFemale');
+	//MySQL.FindFemale('12.08.2008');
+	writeln('-----------');
+	writeln('FindParents');
+	//MySQL.FindParents(444);
+	writeln('-----------');
+	writeln('FindGrandFathers');
+	//MySQL.FindGrandFathers;
+	writeln('-----------');
+	writeln('FindSirota');
+	MySQL.FindSirota;
+	writeln('-----------');
+	
+	//ojb:= TPersonDB.Create;
+	//Assign(F,'D:\Pascal\DataBasePeople.txt');
+	//Assign(F,'D:\Pascal(DB)\DataTest.txt');
+	//ojb.ReadDBPerson(F);
+	//ff := ojb.ReadDBPersons;
+	//Assign(F,'D:\Pascal(DB)\peopleR.txt');
+	//Rewrite(F);
+	//ojb.WriteDBPerson(F);
+
+	//ojb.InputStandart;
+	//ojb.OutStandart;
+	//ojb.MainDeleteDBPerson(2);
+	//ojb.OutStandart;
+	//Writeln(ff[3].TempChildsID[0]);//наконец-то
+	//Writeln(ff[3].TempChildsID[1]);
+	
+	//ff[0].FullChildSee();
+	//ff[1].FullChildSee;
+	//Writeln(ff[2].FLastName);
+	//ojb. 
+END.
